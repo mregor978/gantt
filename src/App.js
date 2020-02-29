@@ -2,10 +2,13 @@ import React from "react";
 
 import { GanttCanvas } from "./components/GanttCanvas/GanttCanvas";
 
-import "./App.module.sass";
+import classes from "./App.module.sass";
 
-export const App = () => (
-  <div>
-    <GanttCanvas />
-  </div>
-);
+export const App = () => {
+  const { app } = classes;
+  return (
+    <div className={app}>
+      <GanttCanvas />
+    </div>
+  );
+};
