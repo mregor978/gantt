@@ -1,10 +1,13 @@
 import React, { useRef } from "react";
 
+import { ganttDataCreator } from "../../utils/ganttData";
+
 import classes from "./GanttCanvas.module.sass";
 
 export const GanttCanvas = () => {
   const { gantt, gantt__title, gantt__chart } = classes;
   const canvasRef = useRef(null);
+  const { ganttData } = new ganttDataCreator(5);
 
   function createCanvas(canvas) {
     const context2D = canvas.getContext("2d");
