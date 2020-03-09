@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef } from "react";
 
 import { fills } from "./fills";
 
+import { ganttDataCreator } from "../../utils/ganttData";
+
 import classes from "./GanttCanvas.module.sass";
 
 export const GanttCanvas = () => {
@@ -18,6 +20,7 @@ export const GanttCanvas = () => {
     },
     [RED]
   );
+  const { ganttData } = new ganttDataCreator(5);
 
   const drawChart = useCallback(
     chart => {
