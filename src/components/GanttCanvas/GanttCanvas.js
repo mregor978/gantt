@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 
+import moment from "moment";
+
 import { fills } from "./fills";
 
 import { ganttDataCreator } from "../../utils/ganttData";
@@ -12,6 +14,20 @@ export const GanttCanvas = () => {
 
   const canvasRef = useRef(null);
   const ganttRef = useRef(null);
+
+  const chartWidth = 5430;
+
+  const getDateXCoord = useCallback(
+    date => {
+      const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
+        90,
+        "days"
+      );
+      const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
+      return (chartWidth / (endDate - startDate)) * (date - startDate);
+    },
+    [chartWidth]
+  );
 
   const drawRect = useCallback(
     chart => {
