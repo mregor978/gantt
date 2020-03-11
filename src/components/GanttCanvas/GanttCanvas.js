@@ -5,7 +5,7 @@ import classes from "./GanttCanvas.module.sass";
 
 export const GanttCanvas = () => {
   const { gantt, gantt__title, gantt__chart } = classes;
-  const { RED } = fills;
+  const { RED, WHITE } = fills;
   const { rectHeight, ganttPadding } = chartConfig;
   const [canvasWidth, setCanvasWidth] = useState(
     window.innerWidth - ganttPadding
@@ -13,9 +13,11 @@ export const GanttCanvas = () => {
 
   const canvasRef = useRef(null);
   const ganttRef = useRef(null);
+  const chartRef = useRef(null);
 
   const dragActive = useRef(false);
   const startX = useRef(0);
+  const currentTranslate = useRef(0);
 
   const activateDrag = e => {
     dragActive.current = true;
@@ -39,32 +41,44 @@ export const GanttCanvas = () => {
   // );
 
   const drawRect = useCallback(
-    (chart, x = 0, y = 0, width = 200) => {
+    (x = 0, y = 0, width = 200) => {
+      const chart = chartRef.current;
       chart.fillStyle = RED;
       chart.fillRect(x, y, width, rectHeight);
     },
     [RED, rectHeight]
   );
 
-  // const drawLine = useCallback(chart => {
-  //   chart.fillStyle = WHITE;
-  // }, []);
+  const drawLine = useCallback(
+    x => {
+      const chart = chartRef.current;
+      chart.strokeStyle = WHITE;
+      chart.beginPath();
+      chart.moveTo(x, 0);
+      chart.lineTo(x, 400);
+      chart.stroke();
+      chart.closePath();
+    },
+    [WHITE]
+  );
 
   const drawChart = useCallback(
-    (translateX = 0) => {
+    (translateX = currentTranslate.current) => {
       const canvas = canvasRef.current;
-      const chart = canvas.getContext("2d");
+      const chart = chartRef.current;
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
       chart.translate(translateX, 0);
-      drawRect(chart);
+      drawLine(100);
+      drawRect();
     },
-    [drawRect]
+    [drawRect, drawLine]
   );
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const chart = canvas.getContext("2d");
+    chartRef.current = chart;
 
     const onResize = () => {
       setCanvasWidth(window.innerWidth - ganttPadding);
@@ -78,6 +92,7 @@ export const GanttCanvas = () => {
     const onDrag = e => {
       if (dragActive.current) {
         const delta = e.pageX - startX.current;
+        currentTranslate.current += delta;
         startX.current = e.pageX;
         drawChart(delta);
       }
