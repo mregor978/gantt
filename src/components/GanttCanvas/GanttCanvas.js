@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import moment from "moment";
 import { fills } from "./fills";
 import { chartConfig } from "./canvasConfig";
-import { ganttDataCreator } from "../../utils/ganttData";
 import classes from "./GanttCanvas.module.sass";
 
-export const GanttCanvas = data => {
+export const GanttCanvas = () => {
   const { gantt, gantt__title, gantt__chart } = classes;
-  const { RED, WHITE } = fills;
-  const { rectHeight, ganttPadding, lineWidth, dayWidth } = chartConfig;
-
+  const { RED } = fills;
+  const { rectHeight, ganttPadding } = chartConfig;
   const [canvasWidth, setCanvasWidth] = useState(
     window.innerWidth - ganttPadding
   );
@@ -17,32 +14,29 @@ export const GanttCanvas = data => {
   const canvasRef = useRef(null);
   const ganttRef = useRef(null);
 
-  const chartWidth = 5430;
-
-  let dragActive = false;
-  let startX = 0;
-  let chartTranslateX = 0;
+  const dragActive = useRef(false);
+  const startX = useRef(0);
 
   const activateDrag = e => {
-    dragActive = true;
-    startX = e.pageX;
+    dragActive.current = true;
+    startX.current = e.pageX;
   };
 
   const disableDrag = () => {
-    dragActive = false;
+    dragActive.current = false;
   };
 
-  const getDateXCoord = useCallback(
-    date => {
-      const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
-        90,
-        "days"
-      );
-      const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
-      return (chartWidth / (endDate - startDate)) * (date - startDate);
-    },
-    [chartWidth]
-  );
+  // const getDateXCoord = useCallback(
+  //   date => {
+  //     const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
+  //       90,
+  //       "days"
+  //     );
+  //     const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
+  //     return (chartWidth / (endDate - startDate)) * (date - startDate);
+  //   },
+  //   [chartWidth]
+  // );
 
   const drawRect = useCallback(
     (chart, x = 0, y = 0, width = 200) => {
@@ -52,9 +46,9 @@ export const GanttCanvas = data => {
     [RED, rectHeight]
   );
 
-  const drawLine = useCallback(chart => {
-    chart.fillStyle = WHITE;
-  }, []);
+  // const drawLine = useCallback(chart => {
+  //   chart.fillStyle = WHITE;
+  // }, []);
 
   const drawChart = useCallback(
     (translateX = 0) => {
@@ -71,6 +65,7 @@ export const GanttCanvas = data => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const chart = canvas.getContext("2d");
+
     const onResize = () => {
       setCanvasWidth(window.innerWidth - ganttPadding);
       const PIXEL_RATIO = window.devicePixelRatio;
@@ -81,9 +76,9 @@ export const GanttCanvas = data => {
     };
 
     const onDrag = e => {
-      if (dragActive) {
-        const delta = e.pageX - startX;
-        startX = e.pageX;
+      if (dragActive.current) {
+        const delta = e.pageX - startX.current;
+        startX.current = e.pageX;
         drawChart(delta);
       }
     };
@@ -99,7 +94,7 @@ export const GanttCanvas = data => {
       window.removeEventListener("mousemove", onDrag);
       window.removeEventListener("mouseup", disableDrag);
     };
-  }, [drawChart]);
+  }, [drawChart, ganttPadding]);
 
   return (
     <div className={gantt} ref={ganttRef}>

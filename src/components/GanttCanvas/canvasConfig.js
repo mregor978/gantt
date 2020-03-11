@@ -3,5 +3,11 @@ export const chartConfig = {
   ganttPadding: 40,
   lineWidth: 1,
   tickWidth: 29,
-  dayWidth: this.lineWidth + this.tickWidth
+  daysNumber: 181,
+  get dayWidth() {
+    return this.lineWidth + this.tickWidth;
+  },
+  get chartWidth() {
+    return this.dayWidth * this.daysNumber + this.lineWidth;
+  }
 };
