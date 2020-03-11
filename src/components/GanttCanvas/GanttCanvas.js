@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-
+import moment from "moment";
 import { fills } from "./fills";
 import { chartConfig } from "./canvasConfig";
-
+import { ganttDataCreator } from "../../utils/ganttData";
 import classes from "./GanttCanvas.module.sass";
 
 export const GanttCanvas = data => {
-  console.log("render");
   const { gantt, gantt__title, gantt__chart } = classes;
   const { RED, WHITE } = fills;
   const { rectHeight, ganttPadding, lineWidth, dayWidth } = chartConfig;
@@ -17,6 +16,33 @@ export const GanttCanvas = data => {
 
   const canvasRef = useRef(null);
   const ganttRef = useRef(null);
+
+  const chartWidth = 5430;
+
+  let dragActive = false;
+  let startX = 0;
+  let chartTranslateX = 0;
+
+  const activateDrag = e => {
+    dragActive = true;
+    startX = e.pageX;
+  };
+
+  const disableDrag = () => {
+    dragActive = false;
+  };
+
+  const getDateXCoord = useCallback(
+    date => {
+      const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
+        90,
+        "days"
+      );
+      const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
+      return (chartWidth / (endDate - startDate)) * (date - startDate);
+    },
+    [chartWidth]
+  );
 
   const drawRect = useCallback(
     (chart, x = 0, y = 0, width = 200) => {
@@ -31,34 +57,49 @@ export const GanttCanvas = data => {
   }, []);
 
   const drawChart = useCallback(
-    chart => {
+    (translateX = 0) => {
+      const canvas = canvasRef.current;
+      const chart = canvas.getContext("2d");
+      chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
-      chart.translate(0, 0);
+      chart.translate(translateX, 0);
       drawRect(chart);
     },
     [drawRect]
   );
 
   useEffect(() => {
-    const chart = canvasRef.current.getContext("2d");
-
-    const scaleX = useCallback(() => {}, []);
-
+    const canvas = canvasRef.current;
+    const chart = canvas.getContext("2d");
     const onResize = () => {
       setCanvasWidth(window.innerWidth - ganttPadding);
       const PIXEL_RATIO = window.devicePixelRatio;
-      chart.width = chart.offsetWidth * PIXEL_RATIO;
-      chart.height = chart.offsetHeight * PIXEL_RATIO;
+      canvas.width = canvas.offsetWidth * PIXEL_RATIO;
+      canvas.height = canvas.offsetHeight * PIXEL_RATIO;
       chart.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0);
-      drawChart(chart);
+      drawChart();
+    };
+
+    const onDrag = e => {
+      if (dragActive) {
+        const delta = e.pageX - startX;
+        startX = e.pageX;
+        drawChart(delta);
+      }
     };
 
     window.addEventListener("resize", onResize);
+    window.addEventListener("mousemove", onDrag);
+    window.addEventListener("mouseup", disableDrag);
+
     onResize(chart);
+
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", disableDrag);
     };
-  }, [drawChart, canvasWidth, ganttPadding]);
+  }, [drawChart]);
 
   return (
     <div className={gantt} ref={ganttRef}>
@@ -69,6 +110,7 @@ export const GanttCanvas = data => {
         className={gantt__chart}
         width={canvasWidth}
         height={400}
+        onMouseDown={activateDrag}
       >
         Данный виджет не поддерживается вашим браузером
       </canvas>
