@@ -6,7 +6,7 @@ import classes from "./GanttCanvas.module.sass";
 export const GanttCanvas = () => {
   const { gantt, gantt__title, gantt__chart } = classes;
   const { RED, WHITE } = fills;
-  const { rectHeight, ganttPadding } = chartConfig;
+  const { rectHeight, ganttPadding, linesNumber } = chartConfig;
   const [canvasWidth, setCanvasWidth] = useState(
     window.innerWidth - ganttPadding
   );
@@ -49,30 +49,37 @@ export const GanttCanvas = () => {
     [RED, rectHeight]
   );
 
-  const drawLine = useCallback(
-    x => {
-      const chart = chartRef.current;
+  const drawLines = useCallback(() => {
+    const chart = chartRef.current;
+
+    const drawLine = x => {
       chart.strokeStyle = WHITE;
       chart.beginPath();
       chart.moveTo(x, 0);
       chart.lineTo(x, 400);
       chart.stroke();
       chart.closePath();
-    },
-    [WHITE]
-  );
+    };
+
+    for (let i = 0; i < linesNumber; i++) {
+      drawLine(1 + i * 30);
+    }
+    console.log(currentTranslate.current);
+  }, [WHITE, linesNumber]);
 
   const drawChart = useCallback(
     (translateX = currentTranslate.current) => {
       const canvas = canvasRef.current;
       const chart = chartRef.current;
+
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
       chart.translate(translateX, 0);
-      drawLine(100);
+
+      drawLines();
       drawRect();
     },
-    [drawRect, drawLine]
+    [drawRect, drawLines]
   );
 
   useEffect(() => {
