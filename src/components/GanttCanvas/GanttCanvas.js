@@ -1,26 +1,34 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { fills } from "./fills";
-
-import { ganttDataCreator } from "../../utils/ganttData";
+import { chartConfig } from "./canvasConfig";
 
 import classes from "./GanttCanvas.module.sass";
 
-export const GanttCanvas = () => {
+export const GanttCanvas = data => {
+  console.log("render");
   const { gantt, gantt__title, gantt__chart } = classes;
-  const { RED } = fills;
+  const { RED, WHITE } = fills;
+  const { rectHeight, ganttPadding, lineWidth, dayWidth } = chartConfig;
+
+  const [canvasWidth, setCanvasWidth] = useState(
+    window.innerWidth - ganttPadding
+  );
 
   const canvasRef = useRef(null);
   const ganttRef = useRef(null);
 
   const drawRect = useCallback(
-    chart => {
+    (chart, x = 0, y = 0, width = 200) => {
       chart.fillStyle = RED;
-      chart.fillRect(0, 200, 100, 12);
+      chart.fillRect(x, y, width, rectHeight);
     },
-    [RED]
+    [RED, rectHeight]
   );
-  const { ganttData } = new ganttDataCreator(5);
+
+  const drawLine = useCallback(chart => {
+    chart.fillStyle = WHITE;
+  }, []);
 
   const drawChart = useCallback(
     chart => {
@@ -34,7 +42,10 @@ export const GanttCanvas = () => {
   useEffect(() => {
     const chart = canvasRef.current.getContext("2d");
 
+    const scaleX = useCallback(() => {}, []);
+
     const onResize = () => {
+      setCanvasWidth(window.innerWidth - ganttPadding);
       const PIXEL_RATIO = window.devicePixelRatio;
       chart.width = chart.offsetWidth * PIXEL_RATIO;
       chart.height = chart.offsetHeight * PIXEL_RATIO;
@@ -44,9 +55,10 @@ export const GanttCanvas = () => {
 
     window.addEventListener("resize", onResize);
     onResize(chart);
-
-    return window.removeEventListener("resize", onResize);
-  }, [drawChart]);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, [drawChart, canvasWidth, ganttPadding]);
 
   return (
     <div className={gantt} ref={ganttRef}>
@@ -55,7 +67,7 @@ export const GanttCanvas = () => {
         ref={canvasRef}
         id="gantt-canvas"
         className={gantt__chart}
-        width={1500}
+        width={canvasWidth}
         height={400}
       >
         Данный виджет не поддерживается вашим браузером
