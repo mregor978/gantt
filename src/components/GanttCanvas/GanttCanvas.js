@@ -78,16 +78,16 @@ export const GanttCanvas = () => {
       const canvas = canvasRef.current;
       const chart = canvasRef.current.getContext("2d");
       const maxTranslateX = -chartWidth + canvasWidth;
-      let x;
+      let x = translateX;
 
       if (currentTranslateRef.current > 0) {
-        x = 0;
         currentTranslateRef.current = 0;
-      } else if (currentTranslateRef.current < maxTranslateX) {
-        // минус ширина холста
-        x = maxTranslateX;
+        return;
+      }
+      if (currentTranslateRef.current < maxTranslateX) {
         currentTranslateRef.current = maxTranslateX;
-      } else x = translateX;
+        return;
+      }
 
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
@@ -105,8 +105,10 @@ export const GanttCanvas = () => {
       const canvas = canvasRef.current;
       const chart = canvas.getContext("2d");
       const PIXEL_RATIO = window.devicePixelRatio;
+      const width = window.innerWidth - ganttPadding;
+      const maxWidth = 1600 - ganttPadding;
 
-      setCanvasWidth(window.innerWidth - ganttPadding);
+      setCanvasWidth(window.innerWidth > maxWidth ? maxWidth : width);
       canvas.width = canvas.offsetWidth * PIXEL_RATIO;
       canvas.height = canvas.offsetHeight * PIXEL_RATIO;
       chart.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0);
