@@ -1,12 +1,20 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import moment from "moment";
 import { fills } from "./fills";
 import { chartConfig } from "./canvasConfig";
 import classes from "./GanttCanvas.module.sass";
 
-export const GanttCanvas = () => {
+export const GanttCanvas = ({ data }) => {
   const { gantt, gantt__title, gantt__chart } = classes;
   const { RED, WHITE, GREY } = fills;
-  const { rectHeight, ganttPadding, linesNumber, chartWidth } = chartConfig;
+  const {
+    rectHeight,
+    ganttPadding,
+    linesNumber,
+    chartWidth,
+    chartHeight,
+    dayWidth
+  } = chartConfig;
   const [canvasWidth, setCanvasWidth] = useState(
     window.innerWidth - ganttPadding
   );
@@ -21,23 +29,24 @@ export const GanttCanvas = () => {
   const activateDrag = e => {
     dragActiveRef.current = true;
     startXRef.current = e.pageX;
+    e.changedTouches && console.log(e.changedTouches[0]);
   };
 
   const disableDrag = () => {
     dragActiveRef.current = false;
   };
 
-  // const getDateXCoord = useCallback(
-  //   date => {
-  //     const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
-  //       90,
-  //       "days"
-  //     );
-  //     const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
-  //     return (chartWidth / (endDate - startDate)) * (date - startDate);
-  //   },
-  //   [chartWidth]
-  // );
+  const getDateXCoord = useCallback(
+    date => {
+      const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
+        90,
+        "days"
+      );
+      const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
+      return (chartWidth / (endDate - startDate)) * (date - startDate);
+    },
+    [chartWidth]
+  );
 
   const drawRect = useCallback(
     (chart, x = 0, y = 0, width = 200) => {
@@ -55,22 +64,43 @@ export const GanttCanvas = () => {
   //   []
   // );
 
-  const drawLines = useCallback(
-    chart => {
-      function drawLine(x) {
-        chart.strokeStyle = WHITE;
-        chart.beginPath();
-        chart.moveTo(x, 0);
-        chart.lineTo(x, 400);
-        chart.stroke();
-        chart.closePath();
-      }
-
-      for (let i = 0; i < linesNumber; i++) {
-        drawLine(1 + i * 30);
+  const drawRects = useCallback(
+    (chart, data) => {
+      for (let i = 0; i < data.length; i++) {
+        const { trips } = data[i];
+        for (let j = 0; j < trips.length; j++) {
+          const startDate = Date.parse(trips[j].tripStartsOn);
+          const endDate = Date.parse(trips[j].tripEndsOn);
+          const startX = getDateXCoord(startDate);
+          const endX = getDateXCoord(endDate);
+          const width = endX - startX;
+          const y = 34 + i * 80;
+          drawRect(chart, startX, y, width);
+        }
       }
     },
-    [WHITE, linesNumber]
+    [drawRect, getDateXCoord]
+  );
+
+  const drawLine = useCallback(
+    (chart, x) => {
+      chart.strokeStyle = WHITE;
+      chart.beginPath();
+      chart.moveTo(x, 0);
+      chart.lineTo(x, chartHeight);
+      chart.stroke();
+      chart.closePath();
+    },
+    [chartHeight, WHITE]
+  );
+
+  const drawLines = useCallback(
+    chart => {
+      for (let i = 0; i < linesNumber; i++) {
+        drawLine(chart, 1 + i * dayWidth);
+      }
+    },
+    [linesNumber, dayWidth, drawLine]
   );
 
   const drawChart = useCallback(
@@ -82,22 +112,34 @@ export const GanttCanvas = () => {
 
       if (currentTranslateRef.current > 0) {
         currentTranslateRef.current = 0;
-        return;
+        x = 0;
       }
       if (currentTranslateRef.current < maxTranslateX) {
         currentTranslateRef.current = maxTranslateX;
-        return;
+        x = 0;
       }
 
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
       chart.translate(x, 0);
       chart.fillStyle = GREY;
-      chart.fillRect(0, 0, chartWidth, 400);
+      chart.fillRect(0, 0, chartWidth, chartHeight);
       drawLines(chart);
-      drawRect(chart, 5000);
+      drawRects(chart, data);
     },
-    [drawRect, drawLines, GREY, chartWidth, canvasWidth]
+    [drawLines, GREY, chartWidth, canvasWidth, chartHeight, drawRects, data]
+  );
+
+  const onDrag = useCallback(
+    e => {
+      if (dragActiveRef.current) {
+        const delta = e.pageX - startXRef.current;
+        currentTranslateRef.current += delta;
+        startXRef.current = e.pageX;
+        drawChart(delta);
+      }
+    },
+    [drawChart]
   );
 
   useEffect(() => {
@@ -115,15 +157,6 @@ export const GanttCanvas = () => {
       drawChart();
     };
 
-    const onDrag = e => {
-      if (dragActiveRef.current) {
-        const delta = e.pageX - startXRef.current;
-        currentTranslateRef.current += delta;
-        startXRef.current = e.pageX;
-        drawChart(delta);
-      }
-    };
-
     window.addEventListener("resize", onResize);
     window.addEventListener("mousemove", onDrag);
     window.addEventListener("mouseup", disableDrag);
@@ -135,7 +168,7 @@ export const GanttCanvas = () => {
       window.removeEventListener("mousemove", onDrag);
       window.removeEventListener("mouseup", disableDrag);
     };
-  }, [drawChart, ganttPadding]);
+  }, [drawChart, ganttPadding, onDrag]);
 
   return (
     <div className={gantt} ref={ganttRef}>
@@ -147,6 +180,11 @@ export const GanttCanvas = () => {
         width={canvasWidth}
         height={400}
         onMouseDown={activateDrag}
+        onWheel={() => {
+          // todo на ноуте проверить работу
+        }}
+        onTouchStart={activateDrag}
+        onTouchMove={onDrag}
       >
         Данный виджет не поддерживается вашим браузером
       </canvas>

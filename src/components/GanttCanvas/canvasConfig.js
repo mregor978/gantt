@@ -4,6 +4,7 @@ export const chartConfig = {
   lineWidth: 1,
   tickWidth: 29,
   daysNumber: 181,
+  chartHeight: 400,
   get linesNumber() {
     return this.daysNumber + 1;
   },
