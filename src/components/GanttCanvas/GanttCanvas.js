@@ -5,27 +5,26 @@ import classes from "./GanttCanvas.module.sass";
 
 export const GanttCanvas = () => {
   const { gantt, gantt__title, gantt__chart } = classes;
-  const { RED, WHITE } = fills;
-  const { rectHeight, ganttPadding, linesNumber } = chartConfig;
+  const { RED, WHITE, GREY } = fills;
+  const { rectHeight, ganttPadding, linesNumber, chartWidth } = chartConfig;
   const [canvasWidth, setCanvasWidth] = useState(
     window.innerWidth - ganttPadding
   );
 
   const canvasRef = useRef(null);
   const ganttRef = useRef(null);
-  const chartRef = useRef(null);
 
-  const dragActive = useRef(false);
-  const startX = useRef(0);
-  const currentTranslate = useRef(0);
+  const dragActiveRef = useRef(false);
+  const startXRef = useRef(0);
+  const currentTranslateRef = useRef(0);
 
   const activateDrag = e => {
-    dragActive.current = true;
-    startX.current = e.pageX;
+    dragActiveRef.current = true;
+    startXRef.current = e.pageX;
   };
 
   const disableDrag = () => {
-    dragActive.current = false;
+    dragActiveRef.current = false;
   };
 
   // const getDateXCoord = useCallback(
@@ -41,55 +40,73 @@ export const GanttCanvas = () => {
   // );
 
   const drawRect = useCallback(
-    (x = 0, y = 0, width = 200) => {
-      const chart = chartRef.current;
+    (chart, x = 0, y = 0, width = 200) => {
       chart.fillStyle = RED;
       chart.fillRect(x, y, width, rectHeight);
     },
     [RED, rectHeight]
   );
 
-  const drawLines = useCallback(() => {
-    const chart = chartRef.current;
+  // const drawText = useCallback(
+  //   (chart, x = 0, y = 0, width = 200) => {
+  //     chart.font = "14px serif";
+  //
+  //   },
+  //   []
+  // );
 
-    const drawLine = x => {
-      chart.strokeStyle = WHITE;
-      chart.beginPath();
-      chart.moveTo(x, 0);
-      chart.lineTo(x, 400);
-      chart.stroke();
-      chart.closePath();
-    };
+  const drawLines = useCallback(
+    chart => {
+      function drawLine(x) {
+        chart.strokeStyle = WHITE;
+        chart.beginPath();
+        chart.moveTo(x, 0);
+        chart.lineTo(x, 400);
+        chart.stroke();
+        chart.closePath();
+      }
 
-    for (let i = 0; i < linesNumber; i++) {
-      drawLine(1 + i * 30);
-    }
-    console.log(currentTranslate.current);
-  }, [WHITE, linesNumber]);
+      for (let i = 0; i < linesNumber; i++) {
+        drawLine(1 + i * 30);
+      }
+    },
+    [WHITE, linesNumber]
+  );
 
   const drawChart = useCallback(
-    (translateX = currentTranslate.current) => {
+    (translateX = currentTranslateRef.current) => {
       const canvas = canvasRef.current;
-      const chart = chartRef.current;
+      const chart = canvasRef.current.getContext("2d");
+      const maxTranslateX = -chartWidth + canvasWidth;
+      let x;
+
+      if (currentTranslateRef.current > 0) {
+        x = 0;
+        currentTranslateRef.current = 0;
+      } else if (currentTranslateRef.current < maxTranslateX) {
+        // минус ширина холста
+        x = maxTranslateX;
+        currentTranslateRef.current = maxTranslateX;
+      } else x = translateX;
 
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
-      chart.translate(translateX, 0);
-
-      drawLines();
-      drawRect();
+      chart.translate(x, 0);
+      chart.fillStyle = GREY;
+      chart.fillRect(0, 0, chartWidth, 400);
+      drawLines(chart);
+      drawRect(chart, 5000);
     },
-    [drawRect, drawLines]
+    [drawRect, drawLines, GREY, chartWidth, canvasWidth]
   );
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const chart = canvas.getContext("2d");
-    chartRef.current = chart;
-
     const onResize = () => {
-      setCanvasWidth(window.innerWidth - ganttPadding);
+      const canvas = canvasRef.current;
+      const chart = canvas.getContext("2d");
       const PIXEL_RATIO = window.devicePixelRatio;
+
+      setCanvasWidth(window.innerWidth - ganttPadding);
       canvas.width = canvas.offsetWidth * PIXEL_RATIO;
       canvas.height = canvas.offsetHeight * PIXEL_RATIO;
       chart.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0);
@@ -97,10 +114,10 @@ export const GanttCanvas = () => {
     };
 
     const onDrag = e => {
-      if (dragActive.current) {
-        const delta = e.pageX - startX.current;
-        currentTranslate.current += delta;
-        startX.current = e.pageX;
+      if (dragActiveRef.current) {
+        const delta = e.pageX - startXRef.current;
+        currentTranslateRef.current += delta;
+        startXRef.current = e.pageX;
         drawChart(delta);
       }
     };
@@ -109,7 +126,7 @@ export const GanttCanvas = () => {
     window.addEventListener("mousemove", onDrag);
     window.addEventListener("mouseup", disableDrag);
 
-    onResize(chart);
+    onResize();
 
     return () => {
       window.removeEventListener("resize", onResize);
