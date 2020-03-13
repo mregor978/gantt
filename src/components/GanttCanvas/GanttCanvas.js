@@ -28,8 +28,9 @@ export const GanttCanvas = ({ data }) => {
 
   const activateDrag = e => {
     dragActiveRef.current = true;
-    startXRef.current = e.pageX;
-    e.changedTouches && console.log(e.changedTouches[0]);
+    if (e.type === "touchstart") {
+      startXRef.current = e.changedTouches[0].pageX;
+    } else startXRef.current = e.pageX;
   };
 
   const disableDrag = () => {
@@ -133,9 +134,11 @@ export const GanttCanvas = ({ data }) => {
   const onDrag = useCallback(
     e => {
       if (dragActiveRef.current) {
-        const delta = e.pageX - startXRef.current;
+        const pageX =
+          e.type === "touchmove" ? e.changedTouches[0].pageX : e.pageX;
+        const delta = pageX - startXRef.current;
         currentTranslateRef.current += delta;
-        startXRef.current = e.pageX;
+        startXRef.current = pageX;
         drawChart(delta);
       }
     },
@@ -185,6 +188,7 @@ export const GanttCanvas = ({ data }) => {
         }}
         onTouchStart={activateDrag}
         onTouchMove={onDrag}
+        onTouchEnd={disableDrag}
       >
         Данный виджет не поддерживается вашим браузером
       </canvas>
