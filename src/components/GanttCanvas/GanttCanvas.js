@@ -24,20 +24,34 @@ export const GanttCanvas = ({ data }) => {
 
   const dragActiveRef = useRef(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const currentTranslateRef = useRef(0);
+  const xDeltaRef = useRef(0);
+  const yDeltaRef = useRef(0);
+  const isXPanRef = useRef(false);
+  const isYPanRef = useRef(false);
 
   const activateDrag = e => {
     dragActiveRef.current = true;
     if (e.type === "touchstart") {
-      startXRef.current = e.changedTouches[0].pageX;
-    } else startXRef.current = e.pageX;
+      const { pageX, pageY } = e.changedTouches[0];
+      startXRef.current = pageX;
+      startYRef.current = pageY;
+    } else {
+      startXRef.current = e.pageX;
+      startYRef.current = e.pageY;
+    }
   };
 
   const disableDrag = () => {
     dragActiveRef.current = false;
+    isXPanRef.current = false;
+    isYPanRef.current = false;
+    xDeltaRef.current = 0;
+    yDeltaRef.current = 0;
   };
 
-  const getDateXCoord = useCallback(
+  const getDateXCoords = useCallback(
     date => {
       const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
         90,
@@ -72,15 +86,15 @@ export const GanttCanvas = ({ data }) => {
         for (let j = 0; j < trips.length; j++) {
           const startDate = Date.parse(trips[j].tripStartsOn);
           const endDate = Date.parse(trips[j].tripEndsOn);
-          const startX = getDateXCoord(startDate);
-          const endX = getDateXCoord(endDate);
+          const startX = getDateXCoords(startDate);
+          const endX = getDateXCoords(endDate);
           const width = endX - startX;
           const y = 34 + i * 80;
           drawRect(chart, startX, y, width);
         }
       }
     },
-    [drawRect, getDateXCoord]
+    [drawRect, getDateXCoords]
   );
 
   const drawLine = useCallback(
@@ -134,6 +148,19 @@ export const GanttCanvas = ({ data }) => {
   const onDrag = useCallback(
     e => {
       const { type } = e;
+      if (type === "touchmove") {
+        const { pageX, pageY } = e.changedTouches[0];
+        const deltaX = pageX - startXRef.current;
+        xDeltaRef.current = xDeltaRef.current += deltaX;
+        yDeltaRef.current = pageY - startYRef.current;
+        isXPanRef.current = xDeltaRef.current >= 3 || xDeltaRef.current <= -3;
+        isYPanRef.current = yDeltaRef.current <= -10 || yDeltaRef.current >= 10;
+
+        if (!isXPanRef.current && isYPanRef.current && dragActiveRef.current) {
+          dragActiveRef.current = false;
+        }
+      }
+
       if (dragActiveRef.current || type === "wheel") {
         const pageX =
           type === "touchmove" ? e.changedTouches[0].pageX : e.pageX;
