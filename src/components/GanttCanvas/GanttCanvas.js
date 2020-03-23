@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import moment from "moment";
-import { fills } from "./fills";
-import { chartConfig } from "./canvasConfig";
-import classes from "./GanttCanvas.module.sass";
+import { fills } from "../../utils/fills";
+import { chartConfig } from "../../utils/chartConfig";
+import classes from "../../styles/Gantt.module.sass";
 
 export const GanttCanvas = ({ data }) => {
   const { gantt, gantt__title, gantt__chart } = classes;
@@ -13,7 +12,9 @@ export const GanttCanvas = ({ data }) => {
     linesNumber,
     chartWidth,
     chartHeight,
-    dayWidth
+    dayWidth,
+    startDate,
+    endDate
   } = chartConfig;
   const [canvasWidth, setCanvasWidth] = useState(
     window.innerWidth - ganttPadding
@@ -53,14 +54,9 @@ export const GanttCanvas = ({ data }) => {
 
   const getDateXCoords = useCallback(
     date => {
-      const startDate = moment(new Date().setHours(0, 0, 0, 0)).subtract(
-        90,
-        "days"
-      );
-      const endDate = moment(new Date().setHours(0, 0, 0, 0)).add(90, "days");
       return (chartWidth / (endDate - startDate)) * (date - startDate);
     },
-    [chartWidth]
+    [chartWidth, endDate, startDate]
   );
 
   const drawRect = useCallback(
@@ -122,27 +118,16 @@ export const GanttCanvas = ({ data }) => {
     (translateX = currentTranslateRef.current) => {
       const canvas = canvasRef.current;
       const chart = canvasRef.current.getContext("2d");
-      const maxTranslateX = -chartWidth + canvasWidth;
-      let x = translateX;
-
-      if (currentTranslateRef.current > 0) {
-        currentTranslateRef.current = 0;
-        x = 0;
-      }
-      if (currentTranslateRef.current < maxTranslateX) {
-        currentTranslateRef.current = maxTranslateX;
-        x = 0;
-      }
 
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
-      chart.translate(x, 0);
+      chart.translate(translateX, 0);
       chart.fillStyle = GREY;
       chart.fillRect(0, 0, chartWidth, chartHeight);
       drawLines(chart);
       drawRects(chart, data);
     },
-    [drawLines, GREY, chartWidth, canvasWidth, chartHeight, drawRects, data]
+    [drawLines, GREY, chartWidth, chartHeight, drawRects, data]
   );
 
   const onDrag = useCallback(
@@ -162,6 +147,18 @@ export const GanttCanvas = ({ data }) => {
       }
 
       if (dragActiveRef.current || type === "wheel") {
+        // const maxTranslateX = -chartWidth + canvasWidth;
+        // let x = translateX;
+        //
+        // if (currentTranslateRef.current > 0) {
+        //   currentTranslateRef.current = 0;
+        //   x = 0;
+        // }
+        // if (currentTranslateRef.current < maxTranslateX) {
+        //   currentTranslateRef.current = maxTranslateX;
+        //   x = 0;
+        // }
+
         const pageX =
           type === "touchmove" ? e.changedTouches[0].pageX : e.pageX;
         const delta = type === "wheel" ? -e.deltaX : pageX - startXRef.current;
