@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import classes from "../../styles/Gantt.module.sass";
 import { GanttD3XAxis } from "./GanttD3XAxis";
 import { GanttD3Bars } from "./GanttD3Bars";
+import { GanttD3YAxis } from "./GanttD3YAxis";
 
 export const GanttD3 = ({ data }) => {
   const { gantt, gantt__title, gantt__chart } = classes;
@@ -16,6 +17,7 @@ export const GanttD3 = ({ data }) => {
         <g className="gantt-chart__scrollable-container" ref={scrollRef}>
           <GanttD3XAxis />
           <GanttD3Bars data={data} />
+          <GanttD3YAxis data={data} />
         </g>
         {/*<GanttLeftAxis*/}
         {/*  data={data}*/}

@@ -9,7 +9,9 @@ export const chartConfig = {
   daysBeforeCurrentDate: 90,
   daysAfterCurrentDate: 90,
   chartHeight: 400,
-  labelsMarginTop: 20,
+  yAxisWidth: 260,
+  xAxisHeight: 50,
+  marginTop: 20,
   months: [
     "январь",
     "февраль",

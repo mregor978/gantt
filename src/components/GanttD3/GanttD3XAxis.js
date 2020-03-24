@@ -7,16 +7,17 @@ import { dateScale } from "../../utils/utilities";
 
 export const GanttD3XAxis = () => {
   const {
-    labelsMarginTop,
+    marginTop,
     weekdays,
     months,
     daysNumber,
     startDate,
     chartHeight,
     chartWidth,
-    dayWidth
+    dayWidth,
+    xAxisHeight
   } = chartConfig;
-  const { WHITE, RED } = fills;
+  const { WHITE, RED, PALE_WHITE } = fills;
   const dateArray = [];
   for (let i = 0; i < daysNumber; i++)
     dateArray.push(
@@ -36,7 +37,7 @@ export const GanttD3XAxis = () => {
   ];
 
   const axisLines = arrayDateForLine.map(date => {
-    const y1 = date.getDate() === 1 ? 0 : labelsMarginTop;
+    const y1 = date.getDate() === 1 ? 0 : marginTop;
     const x = dateScale(date);
     return (
       <line
@@ -99,10 +100,10 @@ export const GanttD3XAxis = () => {
     <g>
       <rect
         x={0}
-        y={labelsMarginTop}
+        y={marginTop}
         width={chartWidth + dayWidth + 1}
-        height={50}
-        fill="#98a2a8"
+        height={xAxisHeight}
+        fill={PALE_WHITE}
         fillOpacity={0.5}
       />
       <g>{axisLines}</g>

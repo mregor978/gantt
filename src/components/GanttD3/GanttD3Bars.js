@@ -7,7 +7,8 @@ import { fills } from "../../utils/fills";
 export const GanttD3Bars = ({ data }) => {
   const { startDate, endDate, dayWidth, rectHeight, rowHeight } = chartConfig;
   const { RED } = fills;
-  const bars = data.map(({ trips, profileId }, i) => {
+
+  const bars = data.map(({ trips, id }, i) => {
     const marginTop = 80;
     const y = i * rowHeight + marginTop;
     const travellerTrips = trips.map(
@@ -48,7 +49,7 @@ export const GanttD3Bars = ({ data }) => {
     );
 
     return (
-      <g key={profileId} className="traveller-row">
+      <g key={id} className="traveller-row">
         {travellerTrips}
       </g>
     );
