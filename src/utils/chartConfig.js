@@ -53,5 +53,8 @@ export const chartConfig = {
         .add(this.daysAfterCurrentDate, "days")
         .format()
     );
+  },
+  get defaultTranslate() {
+    return this.yAxisWidth + this.lineWidth - this.chartWidth / 2;
   }
 };

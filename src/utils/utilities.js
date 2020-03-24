@@ -48,3 +48,10 @@ export const setWidth = (tripStartCoordinate, tripEndCoordinate) => {
  */
 export const getTripCoordinate = dateString =>
   dateScale(Date.parse(dateString));
+
+/**
+ * @description возвращает объект касания
+ * @param e - событие касания
+ * @return Object
+ */
+export const getTouchObject = e => e.changedTouches[0];
