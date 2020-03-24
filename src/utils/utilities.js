@@ -40,3 +40,11 @@ export const setWidth = (tripStartCoordinate, tripEndCoordinate) => {
   }
   return resultTripEnd - resultTripStart - 1;
 };
+
+/**
+ * Принимает строку с датой, возвращает координату
+ * @param dateString
+ * @returns {number|*}
+ */
+export const getTripCoordinate = dateString =>
+  dateScale(Date.parse(dateString));

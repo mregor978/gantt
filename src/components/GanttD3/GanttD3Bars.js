@@ -1,7 +1,7 @@
 import React from "react";
 
 import { chartConfig } from "../../utils/chartConfig";
-import { dateScale, setWidth } from "../../utils/utilities";
+import { getTripCoordinate, setWidth } from "../../utils/utilities";
 import { fills } from "../../utils/fills";
 
 export const GanttD3Bars = ({ data }) => {
@@ -10,12 +10,12 @@ export const GanttD3Bars = ({ data }) => {
   const bars = data.map(({ trips, id }, i) => {
     const marginTop = 80;
     const y = i * rowHeight + marginTop;
-    const travellerTrips = trips
-      .filter(({ tripEndsOn }) => dateScale(Date.parse(tripEndsOn)) > 0)
-      .map(({ tripStartsOn, tripEndsOn, tripNumber }) => {
-        const tripStart = dateScale(Date.parse(tripStartsOn));
-        const tripEnd = dateScale(Date.parse(tripEndsOn));
 
+    const travellerTrips = trips
+      .filter(({ tripEndsOn }) => getTripCoordinate(tripEndsOn) > 0)
+      .map(({ tripStartsOn, tripEndsOn, tripNumber }) => {
+        const tripStart = getTripCoordinate(tripStartsOn);
+        const tripEnd = getTripCoordinate(tripEndsOn);
         return (
           <rect
             key={tripNumber}
