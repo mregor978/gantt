@@ -15,6 +15,7 @@ export const GanttD3 = ({ data }) => {
   const ganttContainerRef = useRef(null);
   const svgRef = useRef(null);
   const scrollGroupRef = useRef(null);
+
   const scrollXDisabled = useRef(false);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
@@ -77,6 +78,7 @@ export const GanttD3 = ({ data }) => {
   useEffect(() => {
     const scrollGroup = select(scrollGroupRef.current);
     const ganttContainer = ganttContainerRef.current;
+
     const d3Zoom = zoom()
       .scaleExtent([1, 1])
       .on("zoom", () => onScroll(scrollGroup, ganttContainer));

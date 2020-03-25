@@ -67,14 +67,6 @@ export const GanttCanvas = ({ data }) => {
     [RED, rectHeight]
   );
 
-  // const drawText = useCallback(
-  //   (chart, x = 0, y = 0, width = 200) => {
-  //     chart.font = "14px serif";
-  //
-  //   },
-  //   []
-  // );
-
   const drawRects = useCallback(
     (chart, data) => {
       for (let i = 0; i < data.length; i++) {
@@ -118,7 +110,6 @@ export const GanttCanvas = ({ data }) => {
     (translateX = currentTranslateRef.current) => {
       const canvas = canvasRef.current;
       const chart = canvasRef.current.getContext("2d");
-
       chart.clearRect(0, 0, canvas.width, canvas.height);
       chart.scale(1, 1);
       chart.translate(translateX, 0);
@@ -130,73 +121,78 @@ export const GanttCanvas = ({ data }) => {
     [drawLines, GREY, chartWidth, chartHeight, drawRects, data]
   );
 
+  const calcDelta = useCallback(
+    e => {
+      const { type } = e;
+      const maxTranslate = 0;
+      // todo доработать минимальное ограничение прокрутки
+      const minTranslate = canvasWidth - chartWidth;
+      const pageX = type === "touchmove" ? e.changedTouches[0].pageX : e.pageX;
+      let delta = type === "wheel" ? -e.deltaX : pageX - startXRef.current;
+      startXRef.current = pageX;
+      if (currentTranslateRef.current + delta > maxTranslate) {
+        delta = -currentTranslateRef.current;
+      }
+      if (currentTranslateRef.current + delta < minTranslate) {
+        delta = minTranslate - currentTranslateRef.current;
+      }
+      return delta;
+    },
+    [chartWidth, canvasWidth]
+  );
+
+  const detectPanRoute = useCallback(e => {
+    const { pageX, pageY } = e.changedTouches[0];
+    const deltaX = pageX - startXRef.current;
+    xDeltaRef.current = xDeltaRef.current += deltaX;
+    yDeltaRef.current = pageY - startYRef.current;
+    isXPanRef.current = xDeltaRef.current >= 3 || xDeltaRef.current <= -3;
+    isYPanRef.current = yDeltaRef.current <= -10 || yDeltaRef.current >= 10;
+  }, []);
+
   const onDrag = useCallback(
     e => {
       const { type } = e;
       if (type === "touchmove") {
-        const { pageX, pageY } = e.changedTouches[0];
-        const deltaX = pageX - startXRef.current;
-        xDeltaRef.current = xDeltaRef.current += deltaX;
-        yDeltaRef.current = pageY - startYRef.current;
-        isXPanRef.current = xDeltaRef.current >= 3 || xDeltaRef.current <= -3;
-        isYPanRef.current = yDeltaRef.current <= -10 || yDeltaRef.current >= 10;
-
+        detectPanRoute(e);
         if (!isXPanRef.current && isYPanRef.current && dragActiveRef.current) {
           dragActiveRef.current = false;
         }
       }
-
       if (dragActiveRef.current || type === "wheel") {
-        // const maxTranslateX = -chartWidth + canvasWidth;
-        // let x = translateX;
-        //
-        // if (currentTranslateRef.current > 0) {
-        //   currentTranslateRef.current = 0;
-        //   x = 0;
-        // }
-        // if (currentTranslateRef.current < maxTranslateX) {
-        //   currentTranslateRef.current = maxTranslateX;
-        //   x = 0;
-        // }
-
-        const pageX =
-          type === "touchmove" ? e.changedTouches[0].pageX : e.pageX;
-        const delta = type === "wheel" ? -e.deltaX : pageX - startXRef.current;
+        const delta = calcDelta(e);
         currentTranslateRef.current += delta;
-        startXRef.current = pageX;
         drawChart(delta);
       }
     },
-    [drawChart]
+    [drawChart, calcDelta, detectPanRoute]
   );
 
+  const onResize = useCallback(() => {
+    const canvas = canvasRef.current;
+    const chart = canvas.getContext("2d");
+    const PIXEL_RATIO = window.devicePixelRatio;
+    const width = window.innerWidth - ganttPadding;
+    const maxWidth = 1600 - ganttPadding;
+
+    setCanvasWidth(window.innerWidth >= maxWidth ? maxWidth : width);
+    canvas.width = canvas.offsetWidth * PIXEL_RATIO;
+    canvas.height = canvas.offsetHeight * PIXEL_RATIO;
+    chart.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0);
+    drawChart();
+  }, [drawChart, ganttPadding]);
+
   useEffect(() => {
-    const onResize = () => {
-      const canvas = canvasRef.current;
-      const chart = canvas.getContext("2d");
-      const PIXEL_RATIO = window.devicePixelRatio;
-      const width = window.innerWidth - ganttPadding;
-      const maxWidth = 1600 - ganttPadding;
-
-      setCanvasWidth(window.innerWidth > maxWidth ? maxWidth : width);
-      canvas.width = canvas.offsetWidth * PIXEL_RATIO;
-      canvas.height = canvas.offsetHeight * PIXEL_RATIO;
-      chart.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0);
-      drawChart();
-    };
-
     window.addEventListener("resize", onResize);
     window.addEventListener("mousemove", onDrag);
     window.addEventListener("mouseup", disableDrag);
-
     onResize();
-
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("mousemove", onDrag);
       window.removeEventListener("mouseup", disableDrag);
     };
-  }, [drawChart, ganttPadding, onDrag]);
+  }, [drawChart, ganttPadding, onDrag, onResize]);
 
   return (
     <div className={gantt} ref={ganttRef}>
