@@ -1,6 +1,6 @@
 export const fills = {
-  RED: "#FF5248",
+  RED: "red",
   WHITE: "#D9E2E6",
-  GREY: "#5D6C74",
+  GREY: "grey",
   PALE_WHITE: "#98a2a8"
 };
